@@ -1,0 +1,17 @@
+syntax:glob
+
+*.elc
+*.pyc
+*~
+*.orig
+bme/media/photos/*
+bme/media/photos/*
+bme/media/images/*
+bme/media/avatars/*
+*.log
+*.swp
+local_settings.py
+.project
+.pydevproject
+.settings/org.eclipse.core.resources.prefs
+

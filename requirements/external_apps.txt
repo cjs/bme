@@ -1,0 +1,43 @@
+# Get all requirements formerly known as "external_libs" explicitely
+-r libs.txt
+
+# Already released apps
+django-ajax-validation
+django-announcements
+django-avatar
+django-dbtemplates
+django-microblogging
+django-notification
+django-pagination
+django-robots
+django-messages
+django-imagekit
+django-piston
+django-timezones
+django-extensions
+django-db-log
+django-page-cms
+django-wikiapp==0.1.2
+django-flag
+django-debug-toolbar
+django-bookmarks
+django-email-confirmation
+django-friends
+django-gravatar
+django-mailer
+django-oembed
+django-threadedcomments
+django-locations
+django-uni-form
+django-swaps
+
+
+http://django-tagging.googlecode.com/svn/trunk/
+http://django-voting.googlecode.com/svn/trunk/
+http://django-mptt.googlecode.com/svn/trunk/
+
+# Do editable checkouts (yay!)
+-e svn+http://django-schedule.googlecode.com/svn/trunk#egg=django-schedule
+-e svn+http://django-app-plugins.googlecode.com/svn/trunk#egg=django-app-plugins
+-e git://github.com/brosner/django-openid.git#egg=django-openid
+-e git://github.com/jezdez/django-feedutil.git#egg=django-feedutil

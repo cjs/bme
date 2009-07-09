@@ -1,7 +1,14 @@
 from django.contrib.gis.db import models
 from django.db import connection
 from django.contrib.auth.models import User
-import datetime
+from swingtime.models import Event
+from datetime import datetime, timedelta
+	
+MODERATION_CHOICES = (
+	('U', 'UnModerated'),
+	('A', 'Accepted'),
+	('R', 'Rejected'),
+)
 
 class Year(models.Model):
     def __unicode__(self):
@@ -13,8 +20,19 @@ class Year(models.Model):
     theme = models.CharField(max_length=20, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     objects = models.GeoManager()
+    event_start = models.DateField(null=True)
+    event_end = models.DateField(null=True)
     class Meta:
         ordering = ('year',)
+    
+    def daterange(self):
+      """
+      Returns a list of datetime objects for every day of the event
+      """
+      numdays = (self.event_end - self.event_start).days + 1
+      return [self.event_start + timedelta(days=x) for x in range(0,numdays)]
+      
+
 
 class CircularStreet(models.Model):
     def __unicode__(self):
@@ -129,32 +147,23 @@ class ThreeDModel(models.Model):
     model_url = models.URLField() #Google 3D Warehouse
     artist = models.CharField(max_length=200, null=True, blank=True)
 
-class PlayaEvent(models.Model):
-    EVENT_TYPE_CHOICES = (
-        ('NONE', 'None'),
-        ('AA', 'AA Meeting'),
-        ('CLASS', 'Class/Workshop'),
-        ('BURN', 'Burning'),
-        ('PARADE', 'Parade'),
-        ('KIDS', 'Kids Event'),
-        ('DAILY', 'Daily Event'),
-        ('MUSIC', 'Music Event'),
-        ('PERF', 'Performance Event'))
-    def __unicode__(self):
-        return self.year.year + ":" + self.name
-    year = models.ForeignKey(Year)
-    name = models.CharField(max_length=100)
-    #slug = models.SlugField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    type = models.CharField(max_length=6, choices=EVENT_TYPE_CHOICES)
-    start_date_time = models.DateTimeField(null=True, blank=True)
-    end_date_time = models.DateTimeField(null=True, blank=True)
-    duration = models.IntegerField(null=True, blank=True)
-    repeats = models.BooleanField()
-    hosted_by_camp = models.ForeignKey(ThemeCamp, null=True, blank=True)
-    located_at_art = models.ForeignKey(ArtInstallation, null=True, blank=True)
-    location_point = models.PointField(null=True, blank=True)
-    location_track = models.LineStringField(null=True, blank=True)
-    url = models.URLField(null=True, blank=True)
-    contact_email = models.EmailField(null=True, blank=True)
-    objects = models.GeoManager()
+class PlayaEvent(Event):
+
+	def __unicode__(self):
+		return self.year.year + ":" + self.title
+	year = models.ForeignKey(Year)
+	print_description = models.CharField(max_length=150, null=False, blank=True)
+	slug = models.SlugField(max_length=255)
+	hosted_by_camp = models.ForeignKey(ThemeCamp, null=True, blank=True)
+	located_at_art = models.ForeignKey(ArtInstallation, null=True, blank=True)
+	other_location = models.CharField(max_length=255, null=True, blank=True)
+	location_point = models.PointField(null=True, blank=True)
+	location_track = models.LineStringField(null=True, blank=True)
+	url = models.URLField(null=True, blank=True)
+	contact_email = models.EmailField(null=True, blank=True)
+	all_day = models.BooleanField()
+	list_online = models.BooleanField()
+	list_contact_online = models.BooleanField()
+	creator = models.ForeignKey(User, null=False)
+	moderation =  models.CharField(max_length=1, choices=MODERATION_CHOICES, default='U')
+	objects = models.GeoManager()

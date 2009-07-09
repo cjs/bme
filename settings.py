@@ -2,7 +2,14 @@
 # Django settings for complete pinax project.
 
 import os.path
+import logging
 
+logging.basicConfig(
+    level = logging.DEBUG,
+    format = '%(asctime)s %(levelname)s %(message)s',
+    filename = '/tmp/bme.log',
+    filemode = 'w'
+)
 
 PINAX_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../pinax"))
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -10,14 +17,14 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 # tells Pinax to use the default theme
 PINAX_THEME = 'default'
 
-DEBUG = False 
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 # tells Pinax to serve media through django.views.static.serve.
 SERVE_MEDIA = True
 
 ADMINS = (
-    # ('Jeffrey Johnson', 'ortelius@gmail.com'),
+    ('Jeffrey Johnson', 'ortelius@burningman.com'),
 )
 
 MANAGERS = ADMINS
@@ -28,6 +35,8 @@ DATABASE_USER = ''             # Not used with sqlite3.
 DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+
+HAYSTACK_SEARCH_ENGINE = 'whoosh'
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -147,7 +156,8 @@ INSTALLED_APPS = (
     'imagekit',
     'avatar',
     'flag',
-    'schedule',
+#    'schedule',
+    'swingtime',
     'microblogging',
     'locations',
     'piston',
@@ -167,6 +177,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.gis',
 	'django.contrib.databrowse',
+#	'haystack',
 )
 
 ABSOLUTE_URL_OVERRIDES = {
@@ -178,7 +189,7 @@ NOTIFICATION_LANGUAGE_MODULE = 'account.Account'
 
 EMAIL_CONFIRMATION_DAYS = 2
 EMAIL_DEBUG = DEBUG
-CONTACT_EMAIL = "ortelius@gmail.com"
+CONTACT_EMAIL = "ortelius@burningman.com"
 SITE_NAME = "Burning Man Earth"
 LOGIN_URL = "/account/login"
 LOGIN_REDIRECT_URLNAME = "what_next"

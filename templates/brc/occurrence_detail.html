@@ -1,0 +1,33 @@
+{% extends "brc/base.html" %}
+{% block title %}Event Occurrence{% endblock %}
+{% block body %}
+     <h3>Playa Event Occurrence</h3>
+     <h4>
+         <a href="{% url playa_event_view occurrence.event.playaevent.year.year occurrence.event.playaevent.id %}">{{ occurrence.title }}</a>
+         &ndash;
+         {% with occurrence.start_time as st  %}
+            {{ st|date:"l, F jS P" }}
+        </h4>
+        {% endwith %}
+     <dl>
+         <dt>Event type:</dt>
+         <dd>{{ occurrence.event.event_type }}</dd>
+         
+         <dt>Description:</dt>
+         <dd>{{ occurrence.event.description|default:"None" }}</dd>
+     </dl>
+    
+     <form action="" method="post">
+     <table>
+         <tfoot>
+             <tr>
+                 <td colspan="2"><input type="submit" value="Update" /></td>
+             </tr>
+         </tfoot>
+         <tbody>
+             {{ form }}
+         </tbody>
+     </table>
+     </form>
+
+{% endblock %}

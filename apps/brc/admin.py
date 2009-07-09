@@ -1,6 +1,8 @@
 from django.conf import settings
+from swingtime.admin import EventNoteInline, OccurrenceInline
 from django.contrib.gis import admin
 from brc.models import *
+
 class BME_OSMAdmin(admin.OSMGeoAdmin):
     wms_url = 'http://earthdev.burningman.com/cgi-bin/mapserv?map=/home/ortelius/brc2008.map'
     wms_layer = 'brc2008'
@@ -9,23 +11,26 @@ class BME_OSMAdmin(admin.OSMGeoAdmin):
     default_lon = -13269816.5229190997779369
     default_zoom = 13
     display_srid = 4326
-
+    list_per_page = 20
+    openlayers_url = 'http://www.openlayers.org/api/2.8/OpenLayers.js'
 
 class YearAdmin(admin.OSMGeoAdmin):
     list_display = ('year','location')
 
 
 class TimeStreetAdmin(BME_OSMAdmin):
-    list_display = ('name', 'year',)
+    list_display = ('name', 'year', 'street_line')
     list_filter = ['year']
+    list_editable  = ('street_line',)
 
-class CircularStreetAdmin(admin.OSMGeoAdmin):
-    list_display = ('name', 'year','order', 'distance_from_center')
+class CircularStreetAdmin(BME_OSMAdmin):
+    list_display = ('name', 'year','order', 'distance_from_center', 'street_line')
     list_filter = ['year']   
     ordering = ('year','order')
+    list_editable = ('street_line',)
 
 class ThemeCampAdmin(BME_OSMAdmin):
-    list_display = ('name', 'year', 'circular_street', 'time_address','location_point', 'location_poly')
+    list_display = ('name', 'year', 'circular_street', 'time_address', 'hometown')
     list_filter = ['year', 'circular_street', 'time_address']
     ordering = ('name',)
     search_fields = ('name','description')
@@ -41,10 +46,11 @@ class VehicleAdmin(BME_OSMAdmin):
     search_fields = ('name','description')
 
 class PlayaEventAdmin(BME_OSMAdmin):
-    list_display = ('name', 'year', 'type', 'start_date_time', 'end_date_time')
-    list_filter = ['year', 'type']
-    ordering = ('name','start_date_time')
-    search_fields = ('name','description')
+    list_display = ('title', 'event_type', 'year', 'print_description', 'moderation')
+    list_filter = ['year', 'event_type', 'moderation']
+    ordering = ['title']
+    search_fields = ('title','description', 'print_description')
+    inlines = [EventNoteInline, OccurrenceInline]
 
 class TrackPointAdmin(BME_OSMAdmin):
     list_display = ('user', 'vehicle', 'xypoint', 'xypoint_time')
@@ -63,3 +69,4 @@ admin.site.register(PlayaEvent, PlayaEventAdmin)
 admin.site.register(Vehicle, VehicleAdmin)
 admin.site.register(TrackPoint, TrackPointAdmin)
 admin.site.register(ThreeDModel, ThreeDModelAdmin)
+

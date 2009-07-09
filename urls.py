@@ -7,15 +7,22 @@ from django.contrib import databrowse
 from brc.models import *
 from regionals.models import *
 
-databrowse.site.register(Year)
-databrowse.site.register(CircularStreet)
-databrowse.site.register(TimeStreet)
-databrowse.site.register(ThemeCamp)
-databrowse.site.register(ArtInstallation)
-databrowse.site.register(PlayaEvent)
-databrowse.site.register(Vehicle)
-databrowse.site.register(TrackPoint)
-databrowse.site.register(ThreeDModel)
+#from haystack.sites import SearchSite
+#mysite = SearchSite()
+#mysite.register(PlayaEvent)
+
+#import haystack
+#haystack.autodiscover()
+
+#databrowse.site.register(Year)
+#databrowse.site.register(CircularStreet)
+#databrowse.site.register(TimeStreet)
+#databrowse.site.register(ThemeCamp)
+#databrowse.site.register(ArtInstallation)
+#databrowse.site.register(PlayaEvent)
+#databrowse.site.register(Vehicle)
+#databrowse.site.register(TrackPoint)
+#databrowse.site.register(ThreeDModel)
 
 from account.openid_consumer import PinaxConsumer
 
@@ -66,15 +73,17 @@ urlpatterns = patterns('',
     (r'^admin/(.*)', admin.site.root),
     (r'^photos/', include('photos.urls')),
     (r'^avatar/', include('avatar.urls')),
-    (r'^swaps/', include('swaps.urls')),
+#   (r'^swaps/', include('swaps.urls')),
     (r'^flag/', include('flag.urls')),
-    (r'^schedule/', include('schedule.urls')),
+#   (r'^schedule/', include('schedule.urls')),
+    (r'^playaevent/', include('swingtime.urls')),
     (r'^locations/', include('locations.urls')),
     (r'^brc/', include('brc.urls')),
     (r'^api/0.1/', include('api.urls')), 
     (r'^feeds/tweets/(.*)/$', 'django.contrib.syndication.views.feed', tweets_feed_dict),
     (r'^feeds/posts/(.*)/$', 'django.contrib.syndication.views.feed', blogs_feed_dict),
     (r'^feeds/bookmarks/(.*)/?$', 'django.contrib.syndication.views.feed', bookmarks_feed_dict),
+#	(r'^search/', include('haystack.urls')),
 )
 
 ## @@@ for now, we'll use friends_app to glue this stuff together

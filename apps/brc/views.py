@@ -3,14 +3,30 @@ import math
 from datetime import datetime
 from django.shortcuts import get_object_or_404, render_to_response
 from django.core.paginator import InvalidPage
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.contrib.gis.geos import *
+from django.contrib.auth.decorators import login_required
+from django.views.generic.create_update import delete_object
+
+from swingtime.models import Event, Occurrence
+from swingtime import utils, forms
+from swingtime.views import *
 from brc.models import *
+from brc import forms as brcforms
+
+from dateutil import parser
+
+if swingtime_settings.CALENDAR_FIRST_WEEKDAY is not None:
+    calendar.setfirstweekday(swingtime_settings.CALENDAR_FIRST_WEEKDAY)
 
 def index(request, template_name="brc/index.html"):
 	years = Year.objects.all().order_by('-year')
 	return render_to_response(template_name, {"years": years,}, context_instance=RequestContext(request))
+
+#-------------------------------------------------------------------------------
+#---------- Year ----------
+#-------------------------------------------------------------------------------
 
 def year_info(request, year_year):
 	xyear = Year.objects.filter(year=year_year)
@@ -21,6 +37,10 @@ def year_info(request, year_year):
 						'streets' : streets,
 						'previous' : previous,
 						'next' : next,}, context_instance=RequestContext(request))
+
+#-------------------------------------------------------------------------------
+#---------- Art Installations ----------
+#-------------------------------------------------------------------------------
 
 def art_installation_id(request, year_year, art_installation_id):
 	xyear = Year.objects.filter(year=year_year)
@@ -38,26 +58,30 @@ def art_installations(request, year_year):
 	xyear = Year.objects.filter(year=year_year)
 	previous = int(year_year) -1
 	next = int(year_year) + 1
-	ArtInstallations = ArtInstallation.objects.filter(year=xyear[0])
+	ArtInstallations = ArtInstallation.objects.filter(year=xyear[0]).extra(select={'lower_name': 'lower(name)'}).order_by('lower_name')
 	return render_to_response('brc/art_installations.html', {'year': xyear[0],
 							'art_installations': ArtInstallations,
 							'previous' : previous,
 							'next' : next,}, context_instance=RequestContext(request))
 
+#-------------------------------------------------------------------------------
+#---------- ThemeCamps ----------
+#-------------------------------------------------------------------------------
+
 def themecamps(request, year_year):
-	xyear = Year.objects.filter(year=year_year)
+	year = Year.objects.get(year=year_year)
 	previous = int(year_year) -1
 	next = int(year_year) + 1
-	ThemeCamps = ThemeCamp.objects.filter(year=xyear[0])
-	return render_to_response('brc/themecamps.html', {'year': xyear[0],
+	ThemeCamps = ThemeCamp.objects.filter(year=year).extra(select={'lower_name': 'lower(name)'}).order_by('lower_name')
+	return render_to_response('brc/themecamps.html', {'year': year,
 							'theme_camps': ThemeCamps,
 							'previous' : previous,
 							'next' : next,}, context_instance=RequestContext(request))
 	
 def themecampid(request, year_year, theme_camp_id):
-	xyear = Year.objects.filter(year=year_year)
+	year = Year.objects.get(year=year_year)
 	xThemeCamp = ThemeCamp.objects.get(id=theme_camp_id)
-	return render_to_response('brc/themecamp.html', {'year': xyear[0],
+	return render_to_response('brc/themecamp.html', {'year': year,
 							'theme_camp': xThemeCamp,}, context_instance=RequestContext(request))
 
 def themecampname(request, year_year, theme_camp_name):
@@ -66,6 +90,11 @@ def themecampname(request, year_year, theme_camp_name):
 	xThemeCamp =ThemeCamp.objects.filter(year=xyear[0],name__iexact=theme_camp_name)
 	return render_to_response('brc/themecamp.html', {'year': xyear[0],
 							'theme_camp': xThemeCamp[0],}, context_instance=RequestContext(request))
+
+#-------------------------------------------------------------------------------
+#---------- ArtCars ----------
+#-------------------------------------------------------------------------------
+
 def art_cars(request, year_year):
 	xyear = Year.objects.filter(year=year_year)
 	previous = int(year_year) -1
@@ -81,26 +110,154 @@ def art_car_id(request, year_year, art_car_id):
 	xArtCar = Vehicle.objects.get(id=art_car_id)
 	return render_to_response('brc/art_car.html', {'year': xyear[0],
 							'art_car': xArtCar,}, context_instance=RequestContext(request))
+#-------------------------------------------------------------------------------
+#---------- PlayaEvents ----------
+#-------------------------------------------------------------------------------
 
+def all_playa_events(request, 
+	year_year, 
+	template='brc/all_playa_events.html', 
+	queryset=None
+):
+	year = Year.objects.get(year=year_year)
+	previous = int(year.year) -1
+	next = int(year.year) + 1
 
+	if queryset:
+		queryset = queryset._clone()
+	else:
+		queryset = Occurrence.objects.select_related().filter(event__playaevent__moderation='A', event__playaevent__list_online=True)
+      
+	occurrences=queryset.filter(start_time__range=(year.event_start, year.event_end)).order_by('start_time')
+	
+	by_day = [(dt, list(items)) for dt,items in itertools.groupby(occurrences, lambda o: o.start_time.date())]
+  
+	data=dict(year=year,by_day=by_day,previous=previous,next=next,)
+	return render_to_response(template, data,context_instance=RequestContext(request))
 
-def playa_events(request, year_year):
-	xyear = Year.objects.filter(year=year_year)
-	previous = int(year_year) -1
-	next = int(year_year) + 1
-	xPlayaEvents = PlayaEvent.objects.filter(year=xyear[0])
-	return render_to_response('brc/playa_events.html', {'year': xyear[0],
-							'playa_events': xPlayaEvents,
-							'previous' : previous,
-							'next' : next,}, context_instance=RequestContext(request))
+def playa_event_view(request,
+	year_year,
+	playa_event_id,
+	template='brc/playa_event_view.html',
+	event_form_class=brcforms.PlayaEventForm,
+	recurrence_form_class=brcforms.PlayaEventOccurrenceForm,
+):
+	'''
+	View an ``PlayaEvent`` instance and optionally update either the event or its
+	occurrences.
 
-def playa_event_id(request, year_year, playa_event_id):
-	xyear = Year.objects.filter(year=year_year)
-	xPlayaEvent = PlayaEvent.objects.get(id=playa_event_id)
-	return render_to_response('brc/playa_event.html', {'year': xyear[0],
-							'playa_event': xPlayaEvent,}, context_instance=RequestContext(request))
+	Context parameters:
 
+	event: the event keyed by ``pk``
+	event_form: a form object for updating the event
+    	recurrence_form: a form object for adding occurrences
+	'''
 
+	event = get_object_or_404(PlayaEvent, pk=playa_event_id)
+	'''
+	event_form = recurrence_form = None
+	if request.method == 'POST':
+		if '_update' in request.POST:
+			event_form = event_form_class(request.POST, instance=event)
+			if event_form.is_valid():
+				event_form.save(event)
+				return http.HttpResponseRedirect(request.path)
+	elif '_add' in request.POST:
+		recurrence_form = recurrence_form_class(request.POST)
+		if recurrence_form.is_valid():
+			recurrence_form.save(event)
+			return http.HttpResponseRedirect(request.path)
+		else:
+			return http.HttpResponseBadRequest('Bad Request')
+
+	event_form = event_form or event_form_class(instance=event)
+	if not recurrence_form:
+		recurrence_form = recurrence_form_class(initial=dict(year=Year.objects.get(year=year_year)))
+	'''
+
+	return render_to_response(template, dict(playa_event=event, event_form=event_form_class, recurrence_form=recurrence_form_class),context_instance=RequestContext(request))
+ 
+def playa_occurrence_view(request,
+	year_year,
+	playa_event_id, 
+	playa_occurrence_id, 
+	template='brc/occurrence_detail.html',
+	form_class=brcforms.PlayaEventOccurrenceForm
+):
+	'''
+	View a specific occurrence and optionally handle any updates.
+	
+	Context parameters:
+	
+	occurrence: the occurrence object keyed by ``pk``
+	form: a form object for updating the occurrence
+	'''
+	occurrence = get_object_or_404(Occurrence, pk=playa_occurrence_id, event__pk=playa_event_id)
+	if request.method == 'POST':
+		form = form_class(request.POST, instance=occurrence)
+		if form.is_valid():
+			form.save(occurrence.event, playa_occurrence_id)
+			next = "/brc/" + occurrence.event.playaevent.year.year + "/playa_event/" + str(occurrence.event.playaevent.id)
+			return HttpResponseRedirect(next)
+		else:
+			form = form_class(instance=occurrence)
+	else:
+		form = form_class(instance=occurrence)
+
+	return render_to_response(template,dict(occurrence=occurrence, form=form),context_instance=RequestContext(request))
+
+@login_required
+def create_or_edit_event(request, 
+	year_year, 
+	playa_event_id=None, 
+	template_name='brc/add_event.html'
+):
+	user = request.user
+	
+	instance = None
+	if playa_event_id is not None:
+        	instance = get_object_or_404(PlayaEvent, id=playa_event_id)
+	
+	if request.method=='POST':
+		form=brcforms.PlayaEventForm(data=request.POST, instance=instance)
+		if form.is_valid():
+			event = form.save(year_year, user, playa_event_id)
+			next = "/brc/" + event.year.year + "/playa_event/" + str(event.id)
+			return HttpResponseRedirect(next)
+	else:
+		form=brcforms.PlayaEventForm(initial=dict(year=Year.objects.get(year=year_year)), instance=instance)
+	return render_to_response(template_name, {"form": form,}, context_instance=RequestContext(request))
+ 
+@login_required
+def delete_event(request, 
+	year_year,
+	playa_event_id, 
+	next=None, 
+):
+	"""
+	After the event is deleted there are three options for redirect, tried in
+	this order:
+
+	# Try to find a 'next' GET variable
+	# If the key word argument redirect is set
+	# Lastly redirect to the event detail of the recently create event
+	"""
+	event = get_object_or_404(PlayaEvent, id=playa_event_id)
+	#next = next or reverse('day_calendar', args=[event.calendar.slug])
+	#next = get_next_url(request, next)
+	next = "/brc/" + event.year.year + "/playa_events/"
+	return delete_object(
+		request,model = PlayaEvent,
+		object_id = playa_event_id,
+		post_delete_redirect = next,
+		template_name = "brc/delete_event.html",
+		extra_context = dict(next=next),
+		login_required = login_required
+	)
+
+#-------------------------------------------------------------------------------
+#---------- Misc ----------
+#-------------------------------------------------------------------------------
 
 def geocode2(year_year, hour, minute, distance):
 	xyear = Year.objects.filter(year=year_year)

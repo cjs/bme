@@ -1,0 +1,20 @@
+{% extends "brc/base.html" %}
+{% load comments_tag %}
+{% load i18n %}
+{% block head_title %} {{ year.year }} Event - {{ playa_event.title }} {% endblock %}
+{% block body %}
+{{ playa_event.year.year }}<br />
+
+<a href='/brc/{{ playa_event.year.year }}/playa_events/'>Back to {{ playa_event.year.year }} Playa Events</a><br />
+
+{% if not playa_event.list_online %}
+	{% ifnotequal user playa_event.creator %}
+		<h2>Event not available</h2>
+	{% else %}
+		{% include 'brc/playa_event_display.html' %}	
+	{% endifnotequal %}
+{% else %}
+	{% include 'brc/playa_event_display.html' %}	
+{% endif %}
+
+{% endblock %}

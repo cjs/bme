@@ -1,0 +1,24 @@
+{% if point %}
+<a href="{% url points_change id=point.id %}"
+      {% if css_class %}
+          class="{{css_class}} add-point"    
+            {% endif %}
+><h2>Change your Camp Location&raquo;</h2>
+</a>
+<img style="display:none;" class='loading' src='/media/points/img/ajax-loader.gif'>
+</img>
+
+
+
+
+{% else %}
+<a href="{% url points_add app_label=app_label model_name=model_name id=model_instance.id %}"
+  {% if css_class %}
+    class="{{css_class}} add-point"    
+  {% endif %}
+  ><h2>Add your Camp Location&raquo;</h2>
+</a>
+<img style="display:none;" class='loading' src='/media/points/img/ajax-loader.gif'>
+</img>
+{% endif %}
+

@@ -1,0 +1,38 @@
+{% extends 'site_base.html' %}
+{% block head_title %} Search {% endblock %}
+{% block body %}
+    <h2>Search</h2>
+
+    <form method="get" action=".">
+        <table>
+            {{ form.as_p }}
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <input type="submit" value="Search">
+                </td>
+            </tr>
+        </table>
+
+        {% if page.object_list %}
+            {% for result in page.object_list %}
+                <p>
+                  {% ifequal result.model_name "playaevent"  %}
+                    <b>Playa Event: <a href="{{ result.object.get_absolute_url }}">{{ result.object.title }}</a></b><br/>
+                  {% endifequal %}
+                  {% ifequal result.model_name "themecamp" %}
+                    <b>Theme Camp: <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></b><br/>
+                  {% endifequal %}
+                  {% ifequal result.model_name "artinstallation" %}
+                    <b>Theme Camp: <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></b><br/>
+                  {% endifequal %}
+		{% if result.object.description %}
+			{{ result.object.description }}
+		{% endif %}
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>No results found.</p>
+        {% endif %}
+    </form>
+{% endblock %}

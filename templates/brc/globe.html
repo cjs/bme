@@ -1,0 +1,95 @@
+{% extends "brc/base.html" %}
+{% load i18n %}
+{% block extra_head_base %}
+<style type="text/css">
+  #body { width: 100%; height:100%; padding: 0px 0px 0px 0px;}
+  #footer { margin: 0px; padding: 0px; height:0px; width:0px;}
+</style>
+    <link rel="stylesheet" type="text/css" href="http://extjs.cachefly.net/ext-2.2/resources/css/ext-all.css" />
+    <link rel="stylesheet" type="text/css" href="http://code.google.com/p/ext-js-google-earth-api/source/browse/trunk/Ext.ux.GEarthPanel-1.2.css" />
+    <script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAAc6uYIZMXcGKnQLkkUR-LfRQLpPod3aNACjAAjaNKf9qxH3IW9RTQ-LJzW99NU-3ROTfCDGs0VKgK2Q"></script>
+    <script type="text/javascript" src="http://extjs.cachefly.net/builds/ext-cdn-611.js"></script>
+    <script type="text/javascript" src="http://ext-js-google-earth-api.googlecode.com/svn/trunk/Ext.ux.GEarthPanel-1.2.js"></script>
+
+    <script type="text/javascript">
+
+        google.load("earth", "1");
+        google.load("maps", "2.xx");
+
+	var earthPanel;
+        Ext.onReady(function(){
+
+            // Create Google Earth panel
+            earthPanel = new Ext.ux.GEarthPanel({
+                 region: 'center',
+                contentEl: 'eastPanel',
+                margins: '0 0 0 0',
+            });
+
+            // Create control panel
+            var controlPanel = new Ext.Panel({
+                region: 'west',
+                contentEl: 'westPanel',
+                title: 'Control Panel',
+                width: 280,
+                border: true,
+                collapsible: true,
+                margins: '0 0 0 0',
+                layout: 'accordion',
+                layoutConfig: {
+                    animate: true
+                },
+                defaultType: 'panel',
+                defaults: {
+                    bodyStyle: 'padding: 10px'
+                }
+            });
+
+            // Add panels to browser viewport
+            var viewport = new Ext.Panel({
+                layout: 'border',
+                renderTo: 'map',
+		items: [earthPanel],
+		monitorResize: true,
+		doLayout: function() {
+			var header_height = $("#tabhead").height()
+        		var nav_height = $("#subnav").height();
+			this.setSize($(window).width(),$(window).height()-(header_height+nav_height+8));
+		}
+            });
+
+            // Build control panel
+            earthPanel.on('earthLoaded', function(){
+
+                // Display KMLs
+                earthPanel.fetchKml('http://207.7.135.230/apache2-default/2009.kml');
+
+                // Add panels
+                //controlPanel.add(earthPanel.getKmlPanel());
+                controlPanel.add(earthPanel.getLocationPanel());
+                controlPanel.add(earthPanel.getLayersPanel());
+                controlPanel.add(earthPanel.getOptionsPanel());
+                controlPanel.doLayout();
+		var lookAt = earthPanel.earth.createLookAt('');
+		lookAt.set(40.769288,-119.220037,0,earthPanel.earth.ALTITUDE_RELATIVE_TO_GROUND,98.02124892444139,83.07748459712441,151.1785928292709);
+		earthPanel.earth.getView().setAbstractView(lookAt);	
+            });
+	
+	var header_height = $("#tabhead").height()
+	var nav_height = $("#subnav").height();
+
+	map_height = ($(window).height() - (header_height+nav_height)-10);
+	
+	$("html").height(map_height + "px"); 
+	$("body").height(map_height + "px"); 
+        });
+    </script>
+{% endblock %}
+{% block head_title %}{{ year.year }} - Globe{% endblock %}
+{% block body %}
+<div id='map'>
+<div id="westPanel"></div>
+<div id="eastPanel"></div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

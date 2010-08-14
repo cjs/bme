@@ -6,7 +6,6 @@ import re
 import sys
 from bme.apps.brc.models import ArtInstallation, Year, CircularStreet
 
-
 class Command(BaseCommand):
     '''Load art placement data from a CSV file.
 

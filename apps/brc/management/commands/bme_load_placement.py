@@ -5,7 +5,6 @@ import os
 import sys
 from bme.apps.brc.models import ThemeCamp, Year, CircularStreet
 
-
 class Command(BaseCommand):
     '''Load placement data from a CSV file.
 

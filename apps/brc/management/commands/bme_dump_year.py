@@ -6,7 +6,6 @@ import os
 import re
 from bme.apps.brc.models import ArtInstallation, ThemeCamp, PlayaEvent, Year, CircularStreet
 
-
 class Command(BaseCommand):
     '''Dump BRC models.'''
 

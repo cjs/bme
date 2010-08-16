@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         if not os.path.exists(destdir):
             self.verbose_log("Making output directory: %s", destdir)
-            os.path.mkdirs(destdir)
+            os.makedirs(destdir)
 
         self.circle_streets = {}
         for c in CircularStreet.objects.all():

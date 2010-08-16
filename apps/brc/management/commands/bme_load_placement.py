@@ -225,6 +225,7 @@ class UnicodeDictReader:
             val = val.replace("\'", "'")
             val = val.replace(u'\x1c','"')
             val = val.replace(u'\x1d','"')
+            val = val.replace(u'\xe2', "'")
             val = val.strip()
             row[key] = val
         return row

@@ -1,10 +1,11 @@
+from bme.apps.brc.models import ArtInstallation, ThemeCamp, PlayaEvent, Year, CircularStreet
+from cStringIO import StringIO
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
-from cStringIO import StringIO
 import csv, codecs
 import os
 import re
-from bme.apps.brc.models import ArtInstallation, ThemeCamp, PlayaEvent, Year, CircularStreet
 
 class Command(BaseCommand):
     '''Dump BRC models.'''
@@ -30,7 +31,7 @@ class Command(BaseCommand):
         self.verbose = options.get('verbosity', 0) > 0
 
         destdir = options['dest']
-        self.destdir = os.path.abspath(destdir)
+        self.destdir = os.path.abspath(os.path.expanduser(destdir))
 
         if not os.path.exists(destdir):
             self.verbose_log("Making output directory: %s", destdir)
@@ -44,6 +45,7 @@ class Command(BaseCommand):
         self.dump_camps()
         self.dump_art()
         self.dump_events()
+        self.dump_users()
 
     def dump_art(self):
         fn, outfile = self.get_outfile('art')
@@ -55,6 +57,17 @@ class Command(BaseCommand):
         for art in ArtInstallation.objects.filter(year=self.year):
             row = self.parse_fields(art, fields)
             writer.writerow(row)
+
+    def dump_users(self):
+        fn, outfile = self.get_outfile('users')
+        fields = ['username', 'first_name', 'last_name', 'email',
+                  'password', 'is_staff', 'is_superuser']
+        writer = UnicodeWriter(outfile, fields)
+        writer.writeheader()
+        for user in User.objects.filter(is_active=True):
+            row = self.parse_fields(user, fields)
+            writer.writerow(row)
+
 
 
     def dump_camps(self):
@@ -74,7 +87,7 @@ class Command(BaseCommand):
         fields = ['id','year','title','slug','description','print_description','hosted_by_camp',
                   'located_at_art', 'other_location', 'url',
                   'contact_email','all_day','list_online','list_contact_online',
-                  'creator','moderation']
+                  'creator_name','creator_username','moderation','occurrences']
         writer = UnicodeWriter(outfile, fields)
         writer.writeheader()
         for event in PlayaEvent.objects.filter(year=self.year, moderation__in=('U','A')):
@@ -131,14 +144,27 @@ class Command(BaseCommand):
                 except AttributeError:
                     val = ''
 
-            elif field == 'creator':
+            elif field == 'creator_name':
                 try:
                     val = obj.creator.name
                 except AttributeError:
                     val = ''
 
+            elif field == 'creator_username':
+                try:
+                    val = obj.creator.username
+                except AttributeError:
+                    val = ''
+
             elif field == 'moderation':
                 val = MODERATION.get(obj.moderation, 'Unmoderated')
+
+            elif field == 'occurrences':
+                fmt = '%m/%d/%y %H:%M'
+                vals = list(obj.occurrence_set.all())
+                vals.sort()
+                vals = ["%s-%s" % (x.start_time.strftime(fmt),x.end_time.strftime(fmt))  for x in vals]
+                val = ';'.join(vals)
 
             else:
                 val = getattr(obj, field)

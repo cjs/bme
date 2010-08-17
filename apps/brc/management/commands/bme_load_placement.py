@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 import csv, codecs
@@ -217,17 +218,24 @@ class UnicodeDictReader:
     def next(self):
         row = self.reader.next()
         for key in row.keys():
-            val = unicode(row[key], "utf-8", errors='ignore')
+            val = row[key]
+            val = unicode(val, "utf-8", errors='ignore')
             if val.startswith('"'):
                 val = val[1:]
             if val.endswith('"'):
                 val = val[:-1]
             val = val.replace("\'", "'")
             val = val.replace(u'\x1c','"')
+
             val = val.replace(u'\x1d','"')
-            val = val.replace(u'\xe2', "'")
             val = val.strip()
             row[key] = val
+            val = val.replace(u'\xe2', "'")
+            val = val.replace(u'’', "'")
+            val = val.replace(u'', "'")
+            val = val.replace(u'\x19 ', "'")
+            val = val.replace(u'\x19', "'")
+
         return row
 
     def __iter__(self):

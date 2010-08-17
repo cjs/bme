@@ -71,7 +71,7 @@ class Command(BaseCommand):
 
     def dump_events(self):
         fn, outfile = self.get_outfile('events')
-        fields = ['id','year','slug','print_description','hosted_by_camp',
+        fields = ['id','year','title','slug','description','print_description','hosted_by_camp',
                   'located_at_art', 'other_location', 'url',
                   'contact_email','all_day','list_online','list_contact_online',
                   'creator','moderation']

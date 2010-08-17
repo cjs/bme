@@ -48,6 +48,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^$', direct_to_template, {"template": "homepage.html"}, name="home"),
+    url(r'^crossdomain.xml$', direct_to_template, {"template": "crossdomain.xml"}),
     url(r'^playaevents/create$', 'bme.apps.brc.views.create_or_edit_event',
 		{'year_year':"2010"}, name="playa_event_edit"),
     (r'^databrowse/(.*)', databrowse.site.root),
